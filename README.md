@@ -10,6 +10,7 @@ A Python tool that extracts text transcripts from MP4 video files using local co
 - **Batch Processing**: Convert multiple MP4 files at once
 - **Timestamp Support**: Optionally include timestamps in transcripts
 - **Automatic Text Cleanup**: Improves transcript readability with proper formatting
+- **Graphical User Interface**: User-friendly GUI with file queue management, real-time progress tracking, and customizable processing options
 
 ## Installation
 
@@ -71,7 +72,70 @@ Or use the module directly:
 python -m mp4_transcriber -i video.mp4 -o transcript.txt
 ```
 
-### Advanced Options
+### Using the GUI
+
+For an easier user experience, you can use the graphical interface:
+
+```bash
+mp4-to-transcript-gui
+```
+
+Or use the module directly:
+
+```bash
+python -m mp4_transcriber.gui.app
+```
+
+The GUI provides these features:
+
+- **File Management**
+  - Add multiple MP4 files to the queue
+  - Select which files to process using checkboxes
+  - Process only checked files regardless of their status
+  - Remove files from the queue
+
+- **Transcription Options**
+  - Select Whisper model size (tiny, base, small, medium, large)
+  - Toggle timestamp inclusion
+  - Enable/disable transcript auto-cleaning
+  - Option to keep temporary audio files
+  - Select output directory for transcripts
+
+- **Process Monitoring**
+  - Real-time progress tracking with progress bar
+  - Current operation display
+  - Timestamped log of all activities
+  - Start/Stop controls with proper process termination
+
+- **Default Settings**
+  - Uses "tiny" model by default for fastest processing
+  - Configurable default directories via `.env` file
+  - Falls back to `~/Movies` for input and `~/Downloads` for output if not configured
+
+#### GUI Screenshot
+
+The GUI is organized with a clear layout:
+- Top section: File management buttons (Add Files, Remove Selected, Start, Stop)
+- File list: Shows all added files with checkboxes and status indicators
+- Options panel: Configure transcription settings
+- Progress section: Shows current file, operation, and progress bar
+- Log window: Displays timestamped operation logs
+
+### Configuration
+
+You can customize default settings by creating a `.env` file in the project root directory:
+
+```
+# Default directories
+DEFAULT_INPUT_LOCATION='/path/to/your/videos'
+DEFAULT_OUTPUT_LOCATION='/path/to/save/transcripts'
+```
+
+If the `.env` file doesn't exist or a setting is missing, the application will use these defaults:
+- Input location: `~/Movies`
+- Output location: `~/Downloads`
+
+### Advanced Command-Line Options
 
 1. **Choose a different Whisper model**:
 
@@ -144,7 +208,12 @@ mp4_transcriber/
 │       ├── cli.py          # Command-line interface
 │       ├── processor.py    # Video processing pipeline
 │       ├── text_processing.py  # Text cleaning utilities
-│       └── transcription.py    # Speech-to-text functionality
+│       ├── transcription.py    # Speech-to-text functionality
+│       └── gui/            # Graphical user interface
+│           ├── __init__.py # GUI package initialization
+│           ├── app.py      # GUI entry point
+│           ├── main_window.py # Main window implementation
+│           └── processor.py   # GUI integration with backend
 ├── tests/                  # Test suite
 ├── pyproject.toml         # Project metadata and dependencies
 ├── LICENSE                # MIT License
@@ -167,6 +236,10 @@ python -m pytest --cov=mp4_transcriber
 ### Note on Dependencies
 
 The mp4-to-transcript tool requires an active virtual environment where it's installed. The commands are only available when the virtual environment is activated.
+
+- The GUI interface requires PyQt6, which will be automatically installed when you install the package.
+- The application uses python-dotenv for configuration management.
+- If you encounter any GUI-related issues, ensure the dependencies are properly installed: `pip install PyQt6 python-dotenv`
 
 ## License
 

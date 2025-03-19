@@ -23,6 +23,8 @@ dependencies = [
     "openai-whisper>=20230314",
     "nltk>=3.8.1",
     "numpy>=1.24.0",
+    "PyQt6>=6.4.0",
+    "python-dotenv>=1.0.0",
 ]
 
 [project.urls]
@@ -31,6 +33,7 @@ dependencies = [
 
 [project.scripts]
 mp4-to-transcript = "mp4_transcriber.cli:main"
+mp4-to-transcript-gui = "mp4_transcriber.gui.app:run_gui"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
