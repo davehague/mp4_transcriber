@@ -7,6 +7,7 @@ import sys
 import time
 import datetime
 import multiprocessing
+import subprocess  # Added for opening folder
 from mp4_transcriber.gui.processor import GUIProcessor
 from PyQt6.QtWidgets import (
     QApplication,
@@ -48,7 +49,14 @@ class TranscriptionWorker(QRunnable):
     """
 
     def __init__(
-        self, file_path, output_dir, model, include_timestamps, auto_clean, keep_audio
+        self,
+        file_path,
+        output_dir,
+        model,
+        include_timestamps,
+        auto_clean,
+        keep_audio,
+        open_folder,  # Added parameter
     ):
         super().__init__()
         self.file_path = file_path
@@ -57,6 +65,7 @@ class TranscriptionWorker(QRunnable):
         self.include_timestamps = include_timestamps
         self.auto_clean = auto_clean
         self.keep_audio = keep_audio
+        self.open_folder = open_folder  # Store the value
         self.signals = WorkerSignals()
         self.processor = None
 
@@ -165,7 +174,7 @@ class MP4TranscriberGUI(QMainWindow):
         model_layout.addWidget(QLabel("Model:"))
         self.model_combo = QComboBox()
         self.model_combo.addItems(["tiny", "base", "small", "medium", "large"])
-        self.model_combo.setCurrentText("tiny")  # Changed default to tiny
+        self.model_combo.setCurrentText("medium")  # Changed default to medium
         model_layout.addWidget(self.model_combo)
         model_layout.addStretch()
         options_layout.addLayout(model_layout)
@@ -181,6 +190,11 @@ class MP4TranscriberGUI(QMainWindow):
         options_layout.addWidget(self.timestamps_cb)
         options_layout.addWidget(self.clean_cb)
         options_layout.addWidget(self.keep_audio_cb)
+
+        # New checkbox for opening folder
+        self.open_folder_cb = QCheckBox("Open output folder in finder after complete")
+        self.open_folder_cb.setChecked(True)  # Checked by default
+        options_layout.addWidget(self.open_folder_cb)
 
         # Output folder
         output_layout = QHBoxLayout()
@@ -355,6 +369,7 @@ class MP4TranscriberGUI(QMainWindow):
         self.timestamps_cb.setEnabled(False)
         self.clean_cb.setEnabled(False)
         self.keep_audio_cb.setEnabled(False)
+        self.open_folder_cb.setEnabled(False)  # Disable new checkbox
         self.output_edit.setEnabled(False)
         self.browse_btn.setEnabled(False)
 
@@ -372,6 +387,7 @@ class MP4TranscriberGUI(QMainWindow):
         self.timestamps_cb.setEnabled(True)
         self.clean_cb.setEnabled(True)
         self.keep_audio_cb.setEnabled(True)
+        self.open_folder_cb.setEnabled(True)  # Enable new checkbox
         self.output_edit.setEnabled(True)
         self.browse_btn.setEnabled(True)
 
@@ -442,6 +458,7 @@ class MP4TranscriberGUI(QMainWindow):
             self.timestamps_cb.isChecked(),
             self.clean_cb.isChecked(),
             self.keep_audio_cb.isChecked(),
+            self.open_folder_cb.isChecked(),  # Pass checkbox state
         )
 
         # Connect signals
@@ -481,6 +498,25 @@ class MP4TranscriberGUI(QMainWindow):
             if file_info["path"] == file_path:
                 self.file_queue[i]["status"] = "Completed"
                 self.update_files_table()
+
+                # Open output folder if checked
+                if self.open_folder_cb.isChecked():
+                    output_dir = self.output_edit.text()
+                    if os.path.isdir(output_dir):
+                        try:
+                            if sys.platform == "win32":
+                                os.startfile(output_dir)
+                            elif sys.platform == "darwin":  # macOS
+                                subprocess.run(["open", output_dir], check=True)
+                            else:  # Linux and other Unix-like
+                                subprocess.run(["xdg-open", output_dir], check=True)
+                            self.log_message(f"Opened output folder: {output_dir}")
+                        except Exception as e:
+                            self.log_message(f"Error opening output folder: {e}")
+                    else:
+                        self.log_message(
+                            f"Output folder not found or is not a directory: {output_dir}"
+                        )
                 break
 
         if self.processing:
