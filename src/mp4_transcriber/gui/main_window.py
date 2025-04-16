@@ -112,6 +112,13 @@ class MP4TranscriberGUI(QMainWindow):
         self.current_file = None
         self.current_worker = None  # Keep track of current worker
 
+        # Define predefined quick paths
+        self.quick_paths = {
+            "Apple Podcasts": "/Users/davidhague/Library/Group Containers/243LU875E5.groups.com.apple.podcasts/Library/Cache",
+            "OBS Files": "/Users/davidhague/Movies",
+            "Voice Memos": "/Users/davidhague/Library/Group Containers/group.com.apple.VoiceMemos.shared/Recordings",
+        }
+
         self.init_ui()
 
     def init_ui(self):
@@ -125,8 +132,17 @@ class MP4TranscriberGUI(QMainWindow):
         main_widget.setLayout(main_layout)
         self.setCentralWidget(main_widget)
 
-        # Action buttons
+        # Action buttons and Quick Path selection
         action_layout = QHBoxLayout()
+
+        # Quick Path ComboBox
+        self.quick_path_combo = QComboBox()
+        self.quick_path_combo.addItem("Browse...")  # Default option
+        self.quick_path_combo.addItems(self.quick_paths.keys())
+        self.quick_path_combo.setToolTip("Select a common location or browse")
+        action_layout.addWidget(QLabel("Source:"))
+        action_layout.addWidget(self.quick_path_combo)
+
         self.add_btn = QPushButton("Add Files")
         self.remove_btn = QPushButton("Remove Selected")
         self.start_btn = QPushButton("Start")
@@ -139,6 +155,7 @@ class MP4TranscriberGUI(QMainWindow):
         self.stop_btn.setEnabled(False)
 
         action_layout.addWidget(self.add_btn)
+        action_layout.addStretch(1)  # Add stretch to push other buttons right
         action_layout.addWidget(self.remove_btn)
         action_layout.addWidget(self.start_btn)
         action_layout.addWidget(self.stop_btn)
@@ -279,17 +296,32 @@ class MP4TranscriberGUI(QMainWindow):
             self.log_message(f"Added {added_count} file(s) to queue")
 
     def add_files(self):
-        """Open file dialog to add MP4/MP3 files to the queue"""
-        # Get default input location from environment or use fallback
-        default_input = os.environ.get(
-            "DEFAULT_INPUT_LOCATION", os.path.expanduser("~/Movies")
-        )
+        """Open file dialog to add MP4/MP3 files to the queue, using quick path if selected"""
+        selected_path_name = self.quick_path_combo.currentText()
+
+        if selected_path_name == "Browse...":
+            # Use default input location from environment or fallback
+            start_dir = os.environ.get(
+                "DEFAULT_INPUT_LOCATION", os.path.expanduser("~/Movies")
+            )
+        else:
+            # Use the selected quick path
+            start_dir = self.quick_paths.get(
+                selected_path_name, os.path.expanduser("~/Movies")
+            )  # Fallback just in case
+
+        # Ensure the directory exists before opening the dialog
+        if not os.path.isdir(start_dir):
+            self.log_message(
+                f"Warning: Quick path directory not found: {start_dir}. Falling back to Movies."
+            )
+            start_dir = os.path.expanduser("~/Movies")
 
         files, _ = QFileDialog.getOpenFileNames(
             self,
             "Select MP4/MP3 Files",
-            default_input,
-            "Media Files (*.mp4 *.mp3);;MP4 Files (*.mp4);;MP3 Files (*.mp3);;All Files (*)",  # Added MP3 support
+            start_dir,  # Use the determined start directory
+            "Media Files (*.mp4 *.mp3);;MP4 Files (*.mp4);;MP3 Files (*.mp3);;All Files (*)",
         )
 
         if files:
