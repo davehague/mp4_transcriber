@@ -8,7 +8,11 @@ import time
 import datetime
 import multiprocessing
 import subprocess  # Added for opening folder
+import json  # For saving/loading quick paths
 from mp4_transcriber.gui.processor import GUIProcessor
+from mp4_transcriber.gui.quick_path_dialog import (
+    QuickPathDialog,
+)  # Import the new dialog
 from PyQt6.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -27,8 +31,11 @@ from PyQt6.QtWidgets import (
     QHeaderView,
     QGroupBox,
     QLineEdit,
+    QMessageBox,  # Added for error messages
 )
 from PyQt6.QtCore import Qt, QThreadPool, QDir, pyqtSignal, QObject, QRunnable, pyqtSlot
+
+# QStandardPaths no longer needed
 
 
 class WorkerSignals(QObject):
@@ -112,14 +119,58 @@ class MP4TranscriberGUI(QMainWindow):
         self.current_file = None
         self.current_worker = None  # Keep track of current worker
 
-        # Define predefined quick paths
-        self.quick_paths = {
-            "Apple Podcasts": "/Users/davidhague/Library/Group Containers/243LU875E5.groups.com.apple.podcasts/Library/Cache",
-            "OBS Files": "/Users/davidhague/Movies",
-            "Voice Memos": "/Users/davidhague/Library/Group Containers/group.com.apple.VoiceMemos.shared/Recordings",
-        }
+        # Define path for quick paths config in project root
+        self.config_file_path = "quick_paths.json"
+        self.quick_paths = self._load_quick_paths()
 
         self.init_ui()
+
+    # Removed _get_config_path as it's no longer needed
+
+    def _load_quick_paths(self):
+        """Loads quick paths from quick_paths.json in the project root."""
+        if os.path.exists(self.config_file_path):
+            try:
+                with open(self.config_file_path, "r") as f:
+                    paths = json.load(f)
+                    if isinstance(paths, dict):
+                        print(f"Loaded quick paths from {self.config_file_path}")
+                        return paths
+                    else:
+                        print(
+                            f"Warning: Invalid format in {self.config_file_path}. Using empty paths."
+                        )
+                        # Show message box later in init_ui if needed, as UI isn't ready yet
+                        return {"error": "Invalid format"}  # Indicate error state
+            except (IOError, json.JSONDecodeError) as e:
+                print(
+                    f"Error loading quick paths from {self.config_file_path}: {e}. Using empty paths."
+                )
+                # Show message box later in init_ui if needed
+                return {"error": f"Load error: {e}"}  # Indicate error state
+        else:
+            print(f"Warning: {self.config_file_path} not found. No quick paths loaded.")
+            # Return empty, message will be shown in init_ui
+            return {}  # Return empty dict if file doesn't exist
+
+    def _save_quick_paths(self, paths_to_save=None):
+        """Saves the provided paths (or current self.quick_paths) to quick_paths.json."""
+        paths = paths_to_save if paths_to_save is not None else self.quick_paths
+        # Don't save if there was a load error state
+        if isinstance(paths, dict) and "error" in paths:
+            print("Skipping save due to previous load error.")
+            return
+        try:
+            with open(self.config_file_path, "w") as f:
+                json.dump(paths, f, indent=4)
+            print(f"Saved quick paths to {self.config_file_path}")
+        except IOError as e:
+            print(f"Error saving quick paths to {self.config_file_path}: {e}")
+            QMessageBox.critical(
+                self,
+                "Save Error",
+                f"Could not save quick paths to '{self.config_file_path}':\n{e}",
+            )
 
     def init_ui(self):
         """Initialize the user interface"""
@@ -135,14 +186,21 @@ class MP4TranscriberGUI(QMainWindow):
         # Action buttons and Quick Path selection
         action_layout = QHBoxLayout()
 
-        # Quick Path ComboBox
+        # Quick Path ComboBox and Management Button
+        quick_path_layout = QHBoxLayout()  # Nested layout for combo and button
         self.quick_path_combo = QComboBox()
-        self.quick_path_combo.addItem("Browse...")  # Default option
-        self.quick_path_combo.addItems(self.quick_paths.keys())
         self.quick_path_combo.setToolTip("Select a common location or browse")
-        action_layout.addWidget(QLabel("Source:"))
-        action_layout.addWidget(self.quick_path_combo)
+        self._update_quick_path_combo()  # Populate combo
 
+        quick_path_layout.addWidget(QLabel("Source:"))
+        quick_path_layout.addWidget(
+            self.quick_path_combo, 1
+        )  # Give combo stretch factor
+        action_layout.addLayout(
+            quick_path_layout
+        )  # Add nested layout to main action layout
+
+        # Other Action Buttons
         self.add_btn = QPushButton("Add Files")
         self.remove_btn = QPushButton("Remove Selected")
         self.start_btn = QPushButton("Start")
@@ -213,6 +271,12 @@ class MP4TranscriberGUI(QMainWindow):
         self.open_folder_cb.setChecked(True)  # Checked by default
         options_layout.addWidget(self.open_folder_cb)
 
+        # Manage Quick Paths Button
+        self.manage_paths_btn = QPushButton("Manage Quick Paths...")
+        self.manage_paths_btn.setToolTip("Add, edit, or remove quick paths")
+        self.manage_paths_btn.clicked.connect(self.open_manage_paths_dialog)
+        options_layout.addWidget(self.manage_paths_btn)
+
         # Output folder
         output_layout = QHBoxLayout()
         output_layout.addWidget(QLabel("Output folder:"))
@@ -268,6 +332,36 @@ class MP4TranscriberGUI(QMainWindow):
         main_layout.setStretch(4, 2)  # Logs get more space
 
         self.log_message("Application started")
+
+        # Show errors from loading quick paths now that UI is ready
+        if isinstance(self.quick_paths, dict) and "error" in self.quick_paths:
+            error_msg = self.quick_paths["error"]
+            if error_msg == "Invalid format":
+                QMessageBox.warning(
+                    self,
+                    "Config Error",
+                    f"Invalid format found in '{self.config_file_path}'.\n"
+                    f"Please check the file or copy from 'quick_paths.example.json'.",
+                )
+            else:
+                QMessageBox.critical(
+                    self,
+                    "Config Error",
+                    f"Error loading '{self.config_file_path}':\n{error_msg}\n\n"
+                    f"Please ensure the file exists and is valid JSON.",
+                )
+            self.quick_paths = {}  # Reset to empty after showing error
+            self._update_quick_path_combo()  # Update combo to reflect empty state
+        elif not self.quick_paths and not os.path.exists(self.config_file_path):
+            # Only show this info message if the file truly doesn't exist
+            # and wasn't just empty or invalid
+            QMessageBox.information(
+                self,
+                "Quick Paths Not Found",
+                f"'{self.config_file_path}' was not found.\n\n"
+                f"You can copy 'quick_paths.example.json' to '{self.config_file_path}' "
+                f"and customize it to enable quick path selection.",
+            )
 
     def _add_file_paths(self, file_paths):
         """Adds a list of file paths to the queue, checking for duplicates."""
@@ -326,6 +420,33 @@ class MP4TranscriberGUI(QMainWindow):
 
         if files:
             self._add_file_paths(files)
+
+    def _update_quick_path_combo(self):
+        """Updates the items in the quick path combo box."""
+        current_selection = self.quick_path_combo.currentText()
+        self.quick_path_combo.clear()
+        self.quick_path_combo.addItem("Browse...")
+        # Add sorted keys for consistent order, excluding any error key
+        valid_paths = {k: v for k, v in self.quick_paths.items() if k != "error"}
+        sorted_names = sorted(valid_paths.keys())
+        self.quick_path_combo.addItems(sorted_names)
+        # Try to restore previous selection
+        index = self.quick_path_combo.findText(current_selection)
+        if index >= 0:
+            self.quick_path_combo.setCurrentIndex(index)
+
+    def open_manage_paths_dialog(self):
+        """Opens the dialog to manage quick paths."""
+        # Pass a copy of valid paths, excluding any error indicator
+        valid_paths = {k: v for k, v in self.quick_paths.items() if k != "error"}
+        dialog = QuickPathDialog(valid_paths, self)
+        if dialog.exec():  # User clicked Save
+            new_paths = dialog.get_paths()
+            if new_paths != valid_paths:  # Check if changes were actually made
+                self.quick_paths = new_paths
+                self._save_quick_paths()
+                self._update_quick_path_combo()
+                self.log_message("Quick paths updated.")
 
     def update_files_table(self):
         """Update the files table with current queue contents"""

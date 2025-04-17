@@ -45,3 +45,4 @@ Thumbs.db
 # Application specific
 *_transcript.txt
 *_raw.json
+quick_paths.json

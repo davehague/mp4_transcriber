@@ -48,7 +48,7 @@ A Python tool that extracts text transcripts from MP4 video files using local co
    ```bash
    python download_nltk_data.py
    ```
-   
+
    Note: The transcriber will still work without NLTK data, using simplified text processing.
 
 5. **Install FFmpeg**:
@@ -89,12 +89,14 @@ python -m mp4_transcriber.gui.app
 The GUI provides these features:
 
 - **File Management**
+
   - Add multiple MP4 files to the queue
   - Select which files to process using checkboxes
   - Process only checked files regardless of their status
   - Remove files from the queue
 
 - **Transcription Options**
+
   - Select Whisper model size (tiny, base, small, medium, large)
   - Toggle timestamp inclusion
   - Enable/disable transcript auto-cleaning
@@ -102,6 +104,7 @@ The GUI provides these features:
   - Select output directory for transcripts
 
 - **Process Monitoring**
+
   - Real-time progress tracking with progress bar
   - Current operation display
   - Timestamped log of all activities
@@ -115,6 +118,7 @@ The GUI provides these features:
 #### GUI Screenshot
 
 The GUI is organized with a clear layout:
+
 - Top section: File management buttons (Add Files, Remove Selected, Start, Stop)
 - File list: Shows all added files with checkboxes and status indicators
 - Options panel: Configure transcription settings
@@ -123,17 +127,42 @@ The GUI is organized with a clear layout:
 
 ### Configuration
 
-You can customize default settings by creating a `.env` file in the project root directory:
+#### Default Input/Output Directories (.env)
 
-```
+You can customize the default _input_ and _output_ directories used by the "Browse" buttons by creating a `.env` file in the project root directory:
+
+```dotenv
 # Default directories
 DEFAULT_INPUT_LOCATION='/path/to/your/videos'
 DEFAULT_OUTPUT_LOCATION='/path/to/save/transcripts'
 ```
 
 If the `.env` file doesn't exist or a setting is missing, the application will use these defaults:
+
 - Input location: `~/Movies`
 - Output location: `~/Downloads`
+
+#### Quick Path Selection (quick_paths.json)
+
+The GUI includes a "Source" dropdown menu that allows you to quickly select predefined directories when adding files. To configure these paths:
+
+1.  **Copy the example file**:
+    ```bash
+    cp quick_paths.example.json quick_paths.json
+    ```
+2.  **Edit `quick_paths.json`**: Open the newly created `quick_paths.json` file and replace the placeholder paths with the actual paths on your system. The keys (e.g., "My Videos") will be the names displayed in the dropdown.
+
+```json
+{
+  "My Videos": "/actual/path/to/your/videos",
+  "Project Audio": "/actual/path/to/your/project/audio/files",
+  "Downloads": "/actual/path/to/your/downloads"
+}
+```
+
+3.  **Manage in GUI**: You can also add, edit, or delete these paths directly within the application by clicking the "Manage..." button next to the "Source" dropdown.
+
+**Note**: `quick_paths.json` is included in `.gitignore`, so your personal paths won't be committed to the repository. If `quick_paths.json` is missing or invalid, the dropdown will only show the "Browse..." option, and a message will guide you to create the file from the example.
 
 ### Advanced Command-Line Options
 
