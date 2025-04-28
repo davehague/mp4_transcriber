@@ -368,7 +368,7 @@ class MP4TranscriberGUI(QMainWindow):
         added_count = 0
         for file_path in file_paths:
             # Basic check for file extension
-            if file_path.lower().endswith((".mp4", ".mp3")):
+            if file_path.lower().endswith((".mp4", ".mp3", ".m4a")):
                 # Check if file is already in queue
                 if not any(item["path"] == file_path for item in self.file_queue):
                     self.file_queue.append(
@@ -382,7 +382,7 @@ class MP4TranscriberGUI(QMainWindow):
                     added_count += 1
             else:
                 self.log_message(
-                    f"Skipped non-MP4/MP3 file: {os.path.basename(file_path)}"
+                    f"Skipped non-MP4/MP3/M4A file: {os.path.basename(file_path)}"
                 )
 
         if added_count > 0:
@@ -415,7 +415,7 @@ class MP4TranscriberGUI(QMainWindow):
             self,
             "Select MP4/MP3 Files",
             start_dir,  # Use the determined start directory
-            "Media Files (*.mp4 *.mp3);;MP4 Files (*.mp4);;MP3 Files (*.mp3);;All Files (*)",
+            "Media Files (*.mp4 *.mp3 *.m4a);;MP4 Files (*.mp4);;MP3 Files (*.mp3);;M4A Files (*.m4a);;All Files (*)",
         )
 
         if files:
@@ -712,7 +712,7 @@ class MP4TranscriberGUI(QMainWindow):
             # Check if any URL is an MP4 or MP3 file
             for url in event.mimeData().urls():
                 if url.isLocalFile() and url.toLocalFile().lower().endswith(
-                    (".mp4", ".mp3")
+                    (".mp4", ".mp3", ".m4a")
                 ):
                     event.acceptProposedAction()
                     return
@@ -724,7 +724,7 @@ class MP4TranscriberGUI(QMainWindow):
         for url in event.mimeData().urls():
             if url.isLocalFile():
                 file_path = url.toLocalFile()
-                if file_path.lower().endswith((".mp4", ".mp3")):
+                if file_path.lower().endswith((".mp4", ".mp3", ".m4a")):
                     files.append(file_path)
 
         if files:
