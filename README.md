@@ -1,25 +1,19 @@
 # MP4 to Transcript Converter
 
-A Python tool that extracts text transcripts from MP4 video files using local compute resources. This tool extracts audio, performs speech-to-text conversion, and cleans up the resulting transcript.
+A Python tool that extracts text transcripts from MP3, MP4, and M4A files using local compute resources. This tool extracts audio, performs speech-to-text conversion using Whisper.
 
 ## Features
 
 - **100% Local Processing**: No API keys or internet connection required
-- **GPU Acceleration**: Utilizes CUDA for faster processing if available
 - **Multiple Model Options**: Choose from tiny to large models based on your accuracy needs
-- **Batch Processing**: Convert multiple MP4 files at once
-- **Timestamp Support**: Optionally include timestamps in transcripts
-- **Automatic Text Cleanup**: Improves transcript readability with proper formatting
-- **Graphical User Interface**: User-friendly GUI with file queue management, real-time progress tracking, and customizable processing options
+- **Graphical User Interface**: User-friendly GUI with drag and drop file selection and customizable processing options
 
 ## Installation
 
 ### Prerequisites
 
-- Python 3.8 or higher
-- FFmpeg (for audio extraction)
-- NVIDIA GPU with CUDA support (optional, for faster processing)
-- NLTK data for text processing (optional; fallback mechanisms are in place)
+- Python 3.12 or higher
+- [FFmpeg](https://formulae.brew.sh/formula/ffmpeg) (for audio extraction)
 
 ### Setup
 
@@ -111,7 +105,7 @@ The GUI provides these features:
   - Start/Stop controls with proper process termination
 
 - **Default Settings**
-  - Uses "tiny" model by default for fastest processing
+  - Uses "medium" model by default for fastest processing
   - Configurable default directories via `.env` file
   - Falls back to `~/Movies` for input and `~/Downloads` for output if not configured
 
@@ -211,10 +205,8 @@ If you don't have a compatible GPU, the script will automatically use CPU.
 
 ## Performance Tips
 
-- For best performance, use a computer with an NVIDIA GPU and ensure CUDA is properly installed
 - Processing time depends on video length, model size, and your hardware
 - The medium model offers a good balance between accuracy and performance for most cases
-- For batch processing long videos, consider running overnight
 
 ## Troubleshooting
 
@@ -223,44 +215,6 @@ If you don't have a compatible GPU, the script will automatically use CPU.
 3. **Memory issues**: Try a smaller model size or process shorter video segments
 4. **NLTK data errors**: If you see warnings about NLTK resources, you can run `python download_nltk_data.py` to download them. The transcriber will still work without these resources by using a simplified sentence splitting algorithm.
 
-## Development
-
-### Project Structure
-
-```
-mp4_transcriber/
-├── src/                    # Source code
-│   └── mp4_transcriber/    # Main package
-│       ├── __init__.py     # Package initialization
-│       ├── __main__.py     # Entry point for python -m
-│       ├── audio.py        # Audio extraction utilities
-│       ├── cli.py          # Command-line interface
-│       ├── processor.py    # Video processing pipeline
-│       ├── text_processing.py  # Text cleaning utilities
-│       ├── transcription.py    # Speech-to-text functionality
-│       └── gui/            # Graphical user interface
-│           ├── __init__.py # GUI package initialization
-│           ├── app.py      # GUI entry point
-│           ├── main_window.py # Main window implementation
-│           └── processor.py   # GUI integration with backend
-├── tests/                  # Test suite
-├── pyproject.toml         # Project metadata and dependencies
-├── LICENSE                # MIT License
-├── download_nltk_data.py  # Utility to download required NLTK data
-└── README.md              # This file
-```
-
-### Running Tests
-
-```bash
-python -m pytest
-```
-
-or with coverage:
-
-```bash
-python -m pytest --cov=mp4_transcriber
-```
 
 ### Note on Dependencies
 
