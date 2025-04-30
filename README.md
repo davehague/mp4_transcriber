@@ -85,6 +85,7 @@ The GUI provides these features:
 - **File Management**
 
   - Add multiple MP4 files to the queue
+       - Use drag and drop to add files, or select from quick options (see below for configuration)
   - Select which files to process using checkboxes
   - Process only checked files regardless of their status
   - Remove files from the queue
