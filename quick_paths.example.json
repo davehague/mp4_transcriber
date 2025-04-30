@@ -1,5 +1,8 @@
 {
   "My Videos": "/path/to/your/videos",
   "Project Audio": "/path/to/your/project/audio/files",
-  "Downloads": "/path/to/your/downloads"
+  "Downloads": "/path/to/your/downloads",
+  "Apple Podcasts": "/Users/<<username>>/Library/Group Containers/243LU875E5.groups.com.apple.podcasts/Library/Cache",
+  "OBS Files": "/Users/<<username>>/Movies",
+  "Voice Memos": "/Users/<<username>>/Library/Group Containers/group.com.apple.VoiceMemos.shared/Recordings"
 }
