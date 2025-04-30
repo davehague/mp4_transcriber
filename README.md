@@ -1,4 +1,4 @@
-# MP4 to Transcript Converter
+# Audio to Transcript Converter
 
 A Python tool that extracts text transcripts from MP3, MP4, and M4A files using local compute resources. This tool extracts audio, performs speech-to-text conversion using Whisper.
 
